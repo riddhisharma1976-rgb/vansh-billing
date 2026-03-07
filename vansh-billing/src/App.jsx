@@ -35,6 +35,96 @@ function formatDate(d) {
 }
 function today() { return new Date().toISOString().split("T")[0]; }
 
+function printBillInNewWindow(bill) {
+  const sub = bill.services.reduce((s,r) => s + r.amt, 0);
+  const words = numberToWords(sub);
+  const rows = bill.services.map((s,i) => `
+    <tr>
+      <td style="padding:11px 12px">${i+1}.</td>
+      <td style="padding:11px 12px">${s.desc}</td>
+      <td style="padding:11px 12px;text-align:right;font-weight:600">${Number(s.amt).toLocaleString("en-IN",{minimumFractionDigits:2})}</td>
+    </tr>`).join("");
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+    <title>Invoice - ${bill.invoiceNo}</title>
+    <style>
+      body { font-family: Georgia, serif; font-size: 13px; color: #111; margin: 0; padding: 40px 48px; line-height: 1.7; }
+      .header { display: flex; justify-content: space-between; border-bottom: 3px solid #0f1f3d; padding-bottom: 20px; margin-bottom: 24px; }
+      .firm-name { font-size: 22px; font-weight: 700; color: #0f1f3d; letter-spacing: 1px; }
+      .firm-addr { font-size: 11.5px; color: #555; margin-top: 4px; line-height: 1.8; }
+      .inv-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #c9a84c; font-weight: 700; }
+      .inv-no { font-size: 20px; font-weight: 700; color: #0f1f3d; }
+      .bill-to { margin-bottom: 24px; }
+      .bill-to h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #888; margin-bottom: 6px; }
+      table.items { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+      table.items thead tr { background: #0f1f3d; color: #fff; }
+      table.items th { padding: 9px 12px; text-align: left; font-size: 11px; letter-spacing: 1px; }
+      table.items td { border-bottom: 1px solid #e5e7eb; }
+      .words { background: #fdf8f0; border-left: 4px solid #c9a84c; padding: 9px 14px; margin-bottom: 20px; font-size: 12.5px; }
+      .totals { float: right; min-width: 220px; margin-bottom: 28px; }
+      .totals table { width: 100%; font-size: 13px; border-collapse: collapse; }
+      .totals td { padding: 4px 10px; }
+      .grand { border-top: 2px solid #0f1f3d; font-weight: 700; font-size: 15px; }
+      .grand td { padding-top: 8px; }
+      .clearfix { clear: both; }
+      .footer { display: flex; justify-content: space-between; border-top: 1px solid #e5e7eb; padding-top: 18px; font-size: 12px; }
+      .sig-line { margin-top: 48px; border-top: 1.5px solid #0f1f3d; padding-top: 6px; font-size: 11px; color: #555; letter-spacing: 1px; text-transform: uppercase; text-align: right; }
+      @media print { body { padding: 20px 32px; } }
+    </style>
+  </head><body>
+    <div class="header">
+      <div>
+        <div class="firm-name">VANSH CONSULTANTS</div>
+        <div class="firm-addr">
+          119, Arya Nagar, S.K. Road, Meerut<br/>
+          Meerut | Contact No.: 9760896485, 8864876629<br/>
+          Mail id: vanshconsultants@rediffmail.com
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="inv-label">Invoice</div>
+        <div class="inv-no">${bill.invoiceNo}</div>
+        <div style="font-size:12px;color:#555;margin-top:6px">Date: ${formatDate(bill.date).toUpperCase()}</div>
+      </div>
+    </div>
+    <div class="bill-to">
+      <h4>To,</h4>
+      <div style="font-weight:700;font-size:14px;color:#0f1f3d">${bill.clientName.toUpperCase()}${bill.designation ? ", "+bill.designation.toUpperCase() : ""}</div>
+      ${bill.address ? `<div>Address: ${bill.address}</div>` : ""}
+      ${bill.contact ? `<div>Contact No: ${bill.contact}</div>` : ""}
+      ${bill.tan ? `<div>TAN No: ${bill.tan}</div>` : ""}
+    </div>
+    <table class="items">
+      <thead><tr>
+        <th style="width:50px">S.NO</th>
+        <th>PARTICULARS</th>
+        <th style="width:120px;text-align:right">AMOUNT</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="words"><strong>AMOUNT IN WORDS</strong><br/>${words} only.</div>
+    <div class="totals">
+      <table>
+        <tr><td>SUBTOTAL</td><td style="text-align:right">${sub.toLocaleString("en-IN",{minimumFractionDigits:2})}</td></tr>
+        <tr class="grand"><td>Grand TOTAL</td><td style="text-align:right">${bill.grandTotal.toLocaleString("en-IN",{minimumFractionDigits:2})}</td></tr>
+      </table>
+    </div>
+    <div class="clearfix"></div>
+    <div class="footer">
+      <div style="line-height:1.9">
+        <strong style="text-transform:uppercase;font-size:11px;letter-spacing:1px">NOTE FOR VANSH CONSULTANTS</strong><br/>
+        All Cheques in favour of M/s Vansh Consultants<br/>
+        SBI A/C No: 36766851239 &nbsp;|&nbsp; IFSC CODE: SBIN0008696<br/>
+        SBI Shastri Nagar, Meerut
+      </div>
+      <div class="sig-line">(AUTH. Signatory)</div>
+    </div>
+    <script>window.onload = function(){ window.print(); }<\/script>
+  </body></html>`;
+  const w = window.open("", "_blank");
+  w.document.write(html);
+  w.document.close();
+}
+
 // ── BILL PRINT VIEW ──
 function BillPrint({ bill }) {
   const sub = bill.services.reduce((s,r) => s + r.amt, 0);
@@ -315,7 +405,7 @@ export default function App() {
                       </td>
                       <td style={{ padding:"12px 12px" }}>
                         <button onClick={()=>setPreviewBill(b)} style={{ padding:"5px 12px", background:"#0f1f3d", color:"#fff", border:"none", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer", marginRight:6 }}>View</button>
-                        <button onClick={()=>{ setPreviewBill(b); setTimeout(()=>window.print(),300); }} style={{ padding:"5px 12px", background:"#c9a84c", color:"#0f1f3d", border:"none", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer" }}>Print</button>
+                        <button onClick={()=>printBillInNewWindow(b)} style={{ padding:"5px 12px", background:"#c9a84c", color:"#0f1f3d", border:"none", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer" }}>Print</button>
                       </td>
                     </tr>
                   ))}
@@ -457,7 +547,7 @@ export default function App() {
                       </td>
                       <td style={{ padding:"12px 12px" }}>
                         <button onClick={()=>setPreviewBill(b)} style={{ padding:"5px 12px", background:"#0f1f3d", color:"#fff", border:"none", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer", marginRight:4 }}>View</button>
-                        <button onClick={()=>{ setPreviewBill(b); setTimeout(()=>window.print(),300); }} style={{ padding:"5px 12px", background:"#c9a84c", color:"#0f1f3d", border:"none", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer", marginRight:4 }}>Print</button>
+                        <button onClick={()=>printBillInNewWindow(b)} style={{ padding:"5px 12px", background:"#c9a84c", color:"#0f1f3d", border:"none", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer", marginRight:4 }}>Print</button>
                         <button onClick={()=>deleteBill(b.id)} style={{ padding:"5px 12px", background:"#fee2e2", color:"#dc2626", border:"none", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer" }}>Delete</button>
                       </td>
                     </tr>
@@ -476,7 +566,7 @@ export default function App() {
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 24px", borderBottom:"1px solid #f0f0f0", background:"#fff" }}>
               <span style={{ fontWeight:700, fontSize:15, color:"#0f1f3d" }}>Invoice Preview — {previewBill.invoiceNo}</span>
               <div style={{ display:"flex", gap:10 }}>
-                <button onClick={()=>window.print()} style={{ padding:"7px 16px", background:"#c9a84c", color:"#0f1f3d", border:"none", borderRadius:7, fontSize:13, fontWeight:700, cursor:"pointer" }}>🖨 Print</button>
+                <button onClick={()=>printBillInNewWindow(previewBill)} style={{ padding:"7px 16px", background:"#c9a84c", color:"#0f1f3d", border:"none", borderRadius:7, fontSize:13, fontWeight:700, cursor:"pointer" }}>🖨 Print</button>
                 <button onClick={()=>setPreviewBill(null)} style={{ padding:"7px 14px", background:"#fee2e2", color:"#dc2626", border:"none", borderRadius:7, fontSize:13, fontWeight:600, cursor:"pointer" }}>✕ Close</button>
               </div>
             </div>
